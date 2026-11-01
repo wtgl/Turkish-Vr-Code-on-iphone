@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0d0f14"><title>VR Telefon</title>
+<style>
+*{box-sizing:border-box;margin:0;-webkit-user-select:none;user-select:none;touch-action:none}
+html,body{height:100%;background:#000;overflow:hidden;font:600 13px system-ui,sans-serif;color:#fff}
+#rig{display:flex;height:100%}
+.eye{flex:1;position:relative;overflow:hidden;background:radial-gradient(#1c2030,#0d0f14)}
+.eye video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.world,.hud{position:absolute;inset:0}.hud{pointer-events:none}
+.win{position:absolute;left:0;top:0;display:flex;flex-direction:column;border-radius:22px;background:linear-gradient(#1c2133f2,#121622f2);border:1px solid #ffffff2a;overflow:hidden;box-shadow:0 14px 40px #000b,inset 0 1px 0 #ffffff22}
+.bar{height:34px;flex:none;display:flex;align-items:center;gap:8px;padding:0 12px;background:linear-gradient(90deg,#6d5efc,#2ec5ff);text-shadow:0 1px 3px #0006}
+.bar b{flex:1;white-space:nowrap}.bar u{text-decoration:none;width:24px;height:24px;display:grid;place-items:center;border-radius:50%;background:#0007}
+.q{flex:none;margin:6px;padding:8px 10px;border-radius:12px;background:#0a0d16;border:1px solid #ffffff22;min-height:32px;color:#cfd3e6;overflow:hidden;white-space:nowrap}
+.body{flex:1;position:relative}.body iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff}
+.res{position:absolute;inset:0;display:none;background:#12141b;overflow:hidden}
+.it{padding:10px;border-bottom:1px solid #fff2;max-height:15%;overflow:hidden}
+.row{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;margin:5px 8px;border-radius:12px;background:#ffffff14;border:1px solid #ffffff1f}
+.row em{width:36px;height:19px;border-radius:10px;background:#555}.row.on em{background:#4ade80}
+.dock{position:absolute;left:0;top:0;display:flex;gap:7px;z-index:40;padding:8px 10px;border-radius:32px;background:#0d111cd9;border:1px solid #ffffff2e;box-shadow:0 8px 24px #000a}
+
+.dock i{width:50px;height:50px;border-radius:50%;background:linear-gradient(#2d3350,#171b2c);border:1px solid #ffffff33;display:flex;flex-direction:column;align-items:center;justify-content:center;font-style:normal;font-size:20px}
+.dock small{font-size:9px;font-weight:600;color:#bbc}
+.kb{position:absolute;left:0;top:0;display:none;gap:4px;padding:6px;background:#0d111cf2;border-radius:20px;border:1px solid #fff3;z-index:50}
+.keys{flex:1;display:flex;flex-direction:column;gap:3px}.keys div{display:flex;gap:3px}
+.keys i{flex:1;height:27px;display:grid;place-items:center;background:linear-gradient(#444c68,#2f364d);border-radius:8px;font-style:normal}
+.gh{width:26px;display:grid;place-items:center;background:#6d5efc;border-radius:8px;font-size:18px}
+.p{filter:brightness(1.9)}
+canvas{position:absolute;inset:0}
+.st{position:absolute;left:8px;top:6px;font-size:10px;color:#4ade80;text-shadow:0 0 3px #000}
+.tg{position:absolute;left:0;top:0;font-size:46px;line-height:1}
+.clk{position:absolute;top:3%;left:50%;transform:translateX(-50%);text-align:center;text-shadow:0 1px 6px #000;line-height:1}.clk b{font-size:24px;letter-spacing:1px}.clk small{display:block;font-size:10px;opacity:.9;margin-top:3px}
+.ret{position:absolute;left:50%;top:50%;width:34px;height:34px;border-radius:50%;transform:translate(-50%,-50%);border:3px solid #fff;box-shadow:0 0 0 1px #0009}
+.ret::after{content:"";position:absolute;inset:10px;border-radius:50%;background:#fff;box-shadow:0 0 0 1px #0009}
+.toast{position:absolute;top:15%;left:50%;transform:translateX(-50%);max-width:80%;padding:7px 12px;border-radius:10px;background:#000c;opacity:0;transition:opacity .3s;text-align:center}
+#start{position:fixed;inset:0;z-index:99;background:radial-gradient(circle at 50% 0,#2a2466,#0d0f14 60%);display:flex;align-items:center;justify-content:center;padding:16px}
+#start div{width:min(440px,100%);display:flex;flex-direction:column;gap:12px}
+#start h1{font-size:32px;background:linear-gradient(90deg,#8b7dff,#2ec5ff);-webkit-background-clip:text;color:transparent}#start label{display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:10px;background:#1b1e27}
+#start input[type=text]{width:100%;padding:10px;border-radius:10px;border:1px solid #fff3;background:#12141b;color:#fff;-webkit-user-select:text;user-select:text}
+#go{padding:14px;border:0;border-radius:14px;background:linear-gradient(90deg,#6d5efc,#2ec5ff);color:#fff;font:700 16px system-ui}
+#err{color:#ff8a94;min-height:16px}small.h{color:#99a}
+</style></head><body>
+<div id="rig"></div>
+<div id="start"><div>
+<h1>VR Telefon</h1>
+<small class="h">Telefonu yatay tut, VR kutusuna tak. Başlat’a basınca kamera ve hareket izni sorulur, hepsine izin ver.</small>
+<input type="text" id="key" placeholder="YouTube API anahtarı (isteğe bağlı, arama için)">
+<button id="go">Başlat</button><div id="err"></div>
+</div></div>
+<script type="module">
+const $=id=>document.getElementById(id),FOV=90,PAR=5;
+const S={cam:true,hand:true,gaze:true,split:true,bg:0,key:''},H={yaw:0,pitch:0},T={yaw:0,pitch:0},KB={yaw:0,pitch:-12,t:0},DK={yaw:0,pitch:-36},G={on:0,tg:[],score:0};
+let W=[],uid=0,Z=10,ew=400,eh=360,stream,HL,CONN=[],hands=[],lt=-1,hm=[],tm,fc=0,ld=0,S0={yaw:0,pitch:0,n:0},OFF={yaw:0,pitch:0};
+const Pt=[{},{},{}],gz={},get=id=>W.find(w=>w.id==id);
+const wrap=d=>(((d%360)+540)%360)-180;
+const rows=['1234567890','qwertyuıopğü','asdfghjklşi','zxcvbnmöç.-'];
+const KBH='<div class=gh data-act="grabkb">⋮</div><div class=keys>'+rows.map(r=>'<div>'+[...r].map(c=>`<i data-act="k:${c}">${c}</i>`).join('')+'</div>').join('')+'<div><i data-act="k:bs" style="flex:2">⌫</i><i data-act="k:sp" style="flex:6">boşluk</i><i data-act="k:en" style="flex:2">↵</i></div></div><div class=gh data-act="grabkb">⋮</div>';
+const DOCK='<i data-act="app:google" style="color:#8ab4f8">G<small>Google</small></i><i data-act="app:youtube" style="color:#ff4e45">▶<small>YouTube</small></i><i data-act="app:discord" style="color:#9aa5ff">💬<small>Discord</small></i><i data-act="app:all">⊞<small>Hepsi</small></i><i data-act="app:game">🎯<small>Oyun</small></i><i data-act="app:set">⚙<small>Ayarlar</small></i>';
+const SET='<div class=body style="overflow:hidden"><div class=row data-act="bg">Arka plan: <b class=bgn></b></div><div class=row data-act="tog:hand">El takibi<em></em></div><div class=row data-act="tog:gaze">Bakışla tıkla (nokta)<em></em></div><div class=row data-act="tog:split">Çift ekran (VR)<em></em></div><div class=row data-act="rec">Pencereleri ortala</div><div class=row data-act="clr">Hepsini kapat</div></div>';
+const BG=[['Kamera',''],['Yeşil','linear-gradient(#0f5a3c,#06281b)'],['Mavi','linear-gradient(#1747a8,#07173d)'],['Sinema','radial-gradient(ellipse at 50% 30%,#2b3150,#050608 70%)']];
+const STARS=Array.from({length:220},()=>[Math.random()*360-180,Math.random()*150-55,Math.random()*2+.6]);
+const NAME={google:['G','Google'],youtube:['▶','YouTube'],discord:['💬','Discord'],set:['⚙','Ayarlar']};
+const HINT={google:'Google’da ara…',youtube:'Ara veya YouTube linki',discord:'Sunucu ID (rakam)'};
+const eyes=[0,1].map(()=>{const el=document.createElement('div');el.className='eye';
+el.innerHTML=`<video playsinline muted autoplay></video><canvas class=sky></canvas><div class=world><div class=kb>${KBH}</div><div class=dock>${DOCK}</div></div><div class=hud><canvas></canvas><div class=ret></div><div class=clk><b></b><small></small></div><div class=st></div><div class=toast></div></div>`;
+$('rig').append(el);const q=s=>el.querySelector(s);
+return{el,video:q('video'),world:q('.world'),kb:q('.kb'),dock:q('.dock'),st:q('.st'),clk:q('.clk'),cv:q('.hud canvas'),ctx:q('.hud canvas').getContext('2d'),sk:q('.sky'),skc:q('.sky').getContext('2d'),ret:q('.ret'),toast:q('.toast')}});
+function msg(t){$('err').textContent=t;eyes.forEach(e=>{e.toast.textContent=t;e.toast.style.opacity=1});clearTimeout(tm);tm=setTimeout(()=>eyes.forEach(e=>e.toast.style.opacity=0),3500)}
+function size(){ew=eyes[0].el.clientWidth;eh=eyes[0].el.clientHeight;eyes.forEach(e=>{e.cv.width=ew;e.cv.height=eh;e.sk.width=ew;e.sk.height=eh;e.kb.style.width=ew*.96+'px'});W.forEach(sz)}
+function sz(w){const a=w.app=='set'?.8:1,c=w.sc||1;w.e.forEach(d=>{d.style.width=ew*.7*a*c+'px';d.style.height=eh*.72*c+'px'})}
+addEventListener('resize',size);
+function url(w,i){const q=encodeURIComponent(w.s||'');
+if(w.app=='google')return'https://www.google.com/'+(w.s?'search?igu=1&q='+q:'webhp?igu=1');
+if(w.app=='youtube')return'https://www.youtube.com/embed/'+(w.v||'jfKfPfyJRdk')+'?playsinline=1&mute='+i;
+return w.s?'https://discord.com/widget?id='+q+'&theme=dark':'about:blank'}
+function refresh(w){w.e.forEach((d,i)=>{const f=d.querySelector('iframe');
+if(f){const u=url(w,i);if(f.dataset.u!=u){f.dataset.u=u;f.src=u}
+d.querySelector('.q span').textContent=w.q||HINT[w.app];
+const r=d.querySelector('.res');r.style.display=w.res&&w.res.length?'block':'none';
+if(w.res)r.innerHTML=w.res.map(([id,t])=>`<div class=it data-act="play:${w.id}:${id}">${t}</div>`).join('')}})}
+function addWin(app,yaw,pitch){const w={id:++uid,app,q:'',s:'',sc:1,yaw:yaw??H.yaw+(W.length%3-1)*10,pitch:pitch??H.pitch+2,e:[]};
+W.push(w);eyes.forEach(e=>{const d=document.createElement('div');d.className='win';d.dataset.id=w.id;d.dataset.act='drag:'+w.id;d.style.zIndex=++Z;
+d.innerHTML=`<div class=bar><span>${NAME[app][0]}</span><b>${NAME[app][1]}</b><u data-act="close:${w.id}">✕</u></div>`+(app=='set'?SET:`<div class=q data-act="focus:${w.id}">🔍 <span></span></div><div class=body><iframe allow="autoplay;encrypted-media;fullscreen"></iframe><div class=res></div></div>`);
+e.world.append(d);w.e.push(d)});sz(w);refresh(w);apply()}
+function openApp(a){if(a=='game')return game();if(a=='all'){[-70,0,70].forEach((o,i)=>addWin(['google','youtube','discord'][i],H.yaw+o,H.pitch+2))}else addWin(a)}
+function kbShow(on){if(on&&!KB.on){KB.yaw=H.yaw;KB.pitch=H.pitch-12}KB.on=on;eyes.forEach(e=>{e.kb.style.display=on?'flex':'none';e.el.classList.toggle('typing',!!on)})}
+async function submit(w){kbShow(0);w.s=w.q;
+if(w.app=='youtube'&&w.q){const m=w.q.match(/(?:v=|be\/|embed\/)([\w-]{11})/)||(w.q.length==11&&[0,w.q]);
+if(m){w.v=m[1];w.res=null}
+else if(S.key){try{const r=await(await fetch('https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=6&q='+encodeURIComponent(w.q)+'&key='+S.key)).json();w.res=(r.items||[]).map(x=>[x.id.videoId,x.snippet.title]);if(!w.res.length)msg(r.error?r.error.message:'Sonuç yok')}catch(e){msg('Arama hatası')}}
+else msg('Arama için API anahtarı gir veya YouTube linki yaz')}
+refresh(w)}
+function key(x){const w=get(KB.t);if(!w)return;if(x=='bs')w.q=w.q.slice(0,-1);else if(x=='sp')w.q+=' ';else if(x=='en')return submit(w);else w.q+=x;refresh(w)}
+function act(a){const[c,x,y]=a.split(':');
+if(c=='app')openApp(x);
+else if(c=='close'){W.filter(w=>w.id==x).forEach(w=>w.e.forEach(d=>d.remove()));W=W.filter(w=>w.id!=x);if(KB.t==x)kbShow(0)}
+else if(c=='focus'){KB.t=+x;kbShow(1)}
+else if(c=='k')key(x)
+else if(c=='play'){const w=get(x);w.v=y;w.res=null;refresh(w)}
+else if(c=='tog'){S[x]=!S[x];apply()}
+else if(c=='bg'){S.bg=(S.bg+1)%4;apply()}else if(c=='rec')W.forEach((w,i)=>{w.yaw=H.yaw+(i-(W.length-1)/2)*70;w.pitch=H.pitch+2})
+else if(c=='clr'){[...W].forEach(w=>act('close:'+w.id))}}
+function click(t){t.classList.add('p');setTimeout(()=>t.classList.remove('p'),160);act(t.dataset.act)}
+function apply(){for(const k of['cam','hand','gaze','split'])document.querySelectorAll(`[data-act="tog:${k}"]`).forEach(r=>r.classList.toggle('on',S[k]));
+eyes.forEach(e=>{e.video.style.opacity=S.bg?0:1;e.el.style.background=BG[S.bg][1]});document.querySelectorAll('.bgn').forEach(b=>b.textContent=BG[S.bg][0]);eyes[1].el.style.display=S.split?'':'none';
+if((S.cam||S.hand)&&!stream)cam();if(S.hand&&!HL)initHands();size()}
+async function cam(){try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:640},height:{ideal:480}},audio:false});eyes.forEach(e=>{e.video.srcObject=stream;e.video.play()})}catch(e){msg('Kamera izni yok')}}
+async function initHands(){HL=1;try{await cam();const B='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
+const{HandLandmarker,FilesetResolver}=await import(B+'/vision_bundle.mjs');const f=await FilesetResolver.forVisionTasks(B+'/wasm');
+const o=d=>({baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',delegate:d},runningMode:'VIDEO',numHands:2,minHandDetectionConfidence:.3,minHandPresenceConfidence:.3,minTrackingConfidence:.3});
+const ios=/iP(hone|ad|od)/.test(navigator.userAgent);try{HL=await HandLandmarker.createFromOptions(f,o('CPU'))}catch(_){HL=await HandLandmarker.createFromOptions(f,o('CPU'))}
+CONN=HandLandmarker.HAND_CONNECTIONS;msg('El takibi hazır: baş + işaret parmağını birleştir = tıkla')}catch(e){HL=0;S.hand=false;apply();msg('El takibi yüklenemedi: '+(e.message||e))}}
+function hit(x,y){const r=eyes[0].el.getBoundingClientRect(),el=document.elementFromPoint(r.left+x,r.top+y);return el&&el.closest('[data-act]')}
+function ang(x,y){return{yaw:H.yaw+(x-ew/2)/(ew/FOV),pitch:H.pitch-(y-eh/2)/(ew/FOV)}}
+function point(p,x,y,down){const was=p.down;p.x=x;p.y=y;p.on=x>=0;p.down=down;
+if(down&&!was){p.px=x;p.py=y;const t=hit(x,y),a=t?t.dataset.act:'';
+const o=a=='grabkb'?KB:a.startsWith('drag:')?get(a.slice(5)):null;
+if(o){p.o=o;const q=ang(x,y);p.dy=o.yaw-q.yaw;p.dp=o.pitch-q.pitch;if(o.e)o.e.forEach(d=>d.style.zIndex=++Z)}else if(t)click(t);else if(G.on)shoot();else if(p===Pt[2])p.look=1}
+if(down&&p.o&&!p.o.two){const q=ang(x,y);p.o.yaw=q.yaw+p.dy;p.o.pitch=q.pitch+p.dp}
+if(down&&p.look){OFF.yaw-=(x-p.px)/(ew/FOV);OFF.pitch+=(y-p.py)/(ew/FOV)}p.px=x;p.py=y;if(!down){p.o=null;p.look=0}}
+function map(l){const v=eyes[0].video,vw=v.videoWidth||640,vh=v.videoHeight||480,s=Math.max(ew/vw,eh/vh);return{x:l.x*vw*s+(ew-vw*s)/2,y:l.y*vh*s+(eh-vh*s)/2}}
+function onori(e){if(e.alpha==null)return;const r=Math.PI/180,a=e.alpha*r,b=e.beta*r,g=e.gamma*r;
+const x=Math.cos(a)*Math.sin(g)+Math.sin(a)*Math.sin(b)*Math.cos(g),y=Math.sin(a)*Math.sin(g)-Math.cos(a)*Math.sin(b)*Math.cos(g),z=Math.cos(b)*Math.cos(g);
+S0.yaw=Math.atan2(-x,-y)/r;S0.pitch=Math.asin(Math.max(-1,Math.min(1,-z)))/r;S0.n++}
+addEventListener('keydown',e=>{const k={ArrowLeft:[-5,0],ArrowRight:[5,0],ArrowUp:[0,5],ArrowDown:[0,-5]}[e.key];if(k){OFF.yaw+=k[0];OFF.pitch+=k[1]}});
+addEventListener('pointermove',e=>{const r=eyes[0].el.getBoundingClientRect();let x=e.clientX-r.left;if(S.split&&x>ew)x-=ew;Pt[2].mx=x;Pt[2].my=e.clientY-r.top});
+addEventListener('pointerdown',e=>{Pt[2].md=1;Pt[2].dn=1;const r=eyes[0].el.getBoundingClientRect();let x=e.clientX-r.left;if(S.split&&x>ew)x-=ew;Pt[2].mx=x;Pt[2].my=e.clientY-r.top});
+addEventListener('pointerup',()=>Pt[2].up=1);
+function place(d,yaw,pitch,par){const dx=wrap(yaw-H.yaw),p=ew/FOV;d.style.transform=`translate(calc(${ew/2+dx*p+par}px - 50%),calc(${eh/2+(H.pitch-pitch)*p}px - 50%))`}
+function frame(){requestAnimationFrame(frame);
+T.yaw=S0.yaw+OFF.yaw;T.pitch=S0.pitch+OFF.pitch;H.yaw+=wrap(T.yaw-H.yaw)*.3;H.pitch+=(T.pitch-H.pitch)*.3;DK.yaw+=wrap(H.yaw-DK.yaw)*.03;
+eyes.forEach((e,i)=>{const par=i?-PAR:PAR;W.forEach(w=>place(w.e[i],w.yaw,w.pitch,par));place(e.kb,KB.yaw,KB.pitch,par*.6);place(e.dock,DK.yaw,DK.pitch,par*.4);G.tg.forEach(t=>place(t.e[i],t.yaw,t.pitch,par*1.2))});
+const v=eyes[0].video;
+if(S.hand&&HL&&HL.detectForVideo&&v.readyState>=2&&v.currentTime!=lt&&performance.now()-ld>40){lt=v.currentTime;ld=performance.now();try{hands=HL.detectForVideo(v,performance.now()).landmarks}catch(_){}}
+if(!S.hand)hands=[];
+hm=hands.map(h=>h.map(map));
+for(let k=0;k<2;k++){const h=hands[k];if(h){const a=hm[k][4],b=hm[k][8],d=Math.hypot(h[4].x-h[8].x,h[4].y-h[8].y)/Math.hypot(h[0].x-h[9].x,h[0].y-h[9].y);
+point(Pt[k],(a.x+b.x)/2,(a.y+b.y)/2,Pt[k].down?d<.5:d<.32)}else point(Pt[k],-1,-1,false)}
+{const q=Pt[2];if(q.mx!=null){point(q,q.mx,q.my,!!(q.md||q.dn));q.dn=0;if(q.up){q.md=0;q.up=0}}}
+const A=Pt[0],B=Pt[1];
+if(A.down&&B.down&&A.o&&A.o===B.o&&A.o.e){const o=A.o,d=Math.hypot(A.x-B.x,A.y-B.y);if(!o.d0){o.d0=d;o.s0=o.sc}o.two=true;o.sc=Math.max(.5,Math.min(2,o.s0*d/o.d0));sz(o);const m=ang((A.x+B.x)/2,(A.y+B.y)/2);o.yaw=m.yaw;o.pitch=m.pitch}else W.forEach(w=>{w.d0=0;w.two=false});
+let prog=0;
+if(S.gaze){const t=hit(ew/2,eh/2),a=t&&t.dataset.act;
+if(a&&!/^(drag|grabkb)/.test(a)){if(gz.t!==t){gz.t=t;gz.s=performance.now();gz.d=0}
+const p=Math.min(1,(performance.now()-gz.s)/1000);if(p>=1&&!gz.d){gz.d=1;click(t)}prog=gz.d?0:p}else gz.t=null}
+if(G.on)gameTick();
+if(++fc%10==0){const st=(S.hand?'El: '+(hands.length?hands.length+' bulundu':(HL&&HL.detectForVideo?'yok':'yükleniyor')):'El: kapalı')+' · kamera '+(eyes[0].video.videoWidth?eyes[0].video.videoWidth+'x'+eyes[0].video.videoHeight:'yok')+' · kafa '+(S0.n?Math.round(H.yaw)+'°':'sensör yok')+(G.on?' · Skor '+G.score+' · '+Math.max(0,Math.ceil((G.end-performance.now())/1000))+'sn':'');eyes.forEach(e=>e.st.textContent=st)}
+eyes.forEach((e,i)=>{sky(e,i);e.ret.style.background=prog?`conic-gradient(#4ade80 ${prog*360}deg,#ffffff22 0)`:'';
+const c=e.ctx;c.clearRect(0,0,ew,eh);
+hm.forEach(h=>{c.strokeStyle='#fff';c.lineWidth=2;c.beginPath();CONN.forEach(({start:s,end:t})=>{c.moveTo(h[s].x,h[s].y);c.lineTo(h[t].x,h[t].y)});c.stroke();
+h.forEach((p,j)=>{const tip=[4,8,12,16,20].includes(j);c.fillStyle=tip?'#22e06b':'#fff';c.beginPath();c.arc(p.x,p.y,tip?9:3,0,7);c.fill()});if(G.on){c.font='44px serif';c.fillText('🔫',h[9].x-22,h[9].y+16)}});
+Pt.forEach(p=>{if(p.on){c.strokeStyle=p.down?'#22e06b':'#fff';c.fillStyle='#22e06b';c.lineWidth=3;c.beginPath();c.arc(p.x,p.y,13,0,7);p.down?c.fill():c.stroke()}})})}
+function tick(){const d=new Date(),t=d.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}),g=d.toLocaleDateString('tr-TR',{weekday:'long',day:'numeric',month:'long'});eyes.forEach(e=>{e.clk.firstChild.textContent=t;e.clk.lastChild.textContent=g})}
+setInterval(tick,1000);tick();
+function sky(e,i){const c=e.skc;c.clearRect(0,0,ew,eh);if(!S.bg)return;const p=ew/FOV,X=a=>ew/2+wrap(a-H.yaw)*p+(i?-2:2),Y=t=>eh/2+(H.pitch-t)*p;
+c.fillStyle='#fff';STARS.forEach(s=>{c.globalAlpha=.35+s[2]/3;c.fillRect(X(s[0]),Y(s[1]),s[2],s[2])});c.globalAlpha=1;
+c.strokeStyle='#ffffff2e';c.lineWidth=1;c.beginPath();
+for(let a=-180;a<180;a+=15){const x=X(a);c.moveTo(x,Y(-6));c.lineTo(x,Y(-80))}
+[-6,-12,-20,-32,-50,-75].forEach(t=>{c.moveTo(0,Y(t));c.lineTo(ew,Y(t))});c.stroke();
+c.strokeStyle='#4ade80aa';c.beginPath();c.moveTo(0,Y(0));c.lineTo(ew,Y(0));c.stroke();
+c.fillStyle='#ffffffaa';c.font='11px system-ui';for(let a=-180;a<180;a+=45)c.fillText(a+'°',X(a)-8,Y(0)-6);
+if(S.bg==3){c.fillStyle='#dfe6ff22';c.fillRect(X(0)-35*p,Y(26),70*p,40*p);c.fillStyle='#ffffffcc';c.font='bold 16px system-ui';c.fillText('SİNEMA',X(0)-28,Y(6))}}
+function game(){if(G.on)return endGame();G.on=1;G.score=0;G.end=performance.now()+30000;G.next=0;kbShow(0);msg('Noktayla nişan al, pinch ile ateş et!')}
+function endGame(){G.tg.forEach(t=>t.e.forEach(d=>d.remove()));G.tg=[];if(G.on)msg('Bitti! Skor: '+G.score);G.on=0}
+function gameTick(){const n=performance.now();if(n>G.end)return endGame();
+if(n>G.next){G.next=n+800;const t={yaw:H.yaw+Math.random()*100-50,pitch:H.pitch+Math.random()*40-12,b:n,e:[]};eyes.forEach(e=>{const d=document.createElement('div');d.className='tg';d.textContent='🎯';e.world.append(d);t.e.push(d)});G.tg.push(t)}
+G.tg=G.tg.filter(t=>n-t.b<3500||(t.e.forEach(d=>d.remove()),0))}
+function shoot(){let b,m=8;G.tg.forEach(t=>{const d=Math.hypot(wrap(t.yaw-H.yaw),t.pitch-H.pitch);if(d<m){m=d;b=t}});if(b){G.score++;b.e.forEach(d=>d.remove());G.tg=G.tg.filter(t=>t!==b)}}
+$('go').onclick=async()=>{S.key=$('key').value.trim();try{localStorage.vrk=S.key}catch(_){}
+document.documentElement.requestFullscreen?.().then(()=>screen.orientation.lock('landscape')).catch(()=>{});
+{try{if(DeviceOrientationEvent.requestPermission&&await DeviceOrientationEvent.requestPermission()!='granted')throw 0;addEventListener('deviceorientation',onori)}catch(_){msg('Hareket izni yok: ok tuşlarıyla bak')}}
+try{navigator.wakeLock.request('screen')}catch(_){}
+$('start').remove();size();apply();frame();setTimeout(()=>{if(!S0.n)msg('Hareket sensörü veri vermiyor. Ekranı parmakla sürükleyerek de bakabilirsin.')},2500)};
+try{$('key').value=localStorage.vrk||''}catch(_){}
+size();
+</script></body></html>
